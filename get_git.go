@@ -203,7 +203,7 @@ func (g *GitGetter) clone(ctx context.Context, dst, sshKeyFile string, u *url.UR
 	args = append(args, u.String(), dst)
 
 	cmd := exec.CommandContext(ctx, "git", args...)
-	setupGitEnv(cmd, sshKeyFile)
+	setupGitEnv(cmd, sshKeyFile, g.client.Insecure)
 	err := getRunCommand(cmd)
 	if err != nil {
 		if depth > 0 && originalRef != "" {
@@ -253,7 +253,7 @@ func (g *GitGetter) update(ctx context.Context, dst, sshKeyFile, ref string, dep
 	}
 
 	cmd.Dir = dst
-	setupGitEnv(cmd, sshKeyFile)
+	setupGitEnv(cmd, sshKeyFile, g.client.Insecure)
 	return getRunCommand(cmd)
 }
 
@@ -265,7 +265,7 @@ func (g *GitGetter) fetchSubmodules(ctx context.Context, dst, sshKeyFile string,
 	}
 	cmd := exec.CommandContext(ctx, "git", args...)
 	cmd.Dir = dst
-	setupGitEnv(cmd, sshKeyFile)
+	setupGitEnv(cmd, sshKeyFile, g.client.Insecure)
 	return getRunCommand(cmd)
 }
 
@@ -301,10 +301,17 @@ func findRemoteDefaultBranch(ctx context.Context, u *url.URL) string {
 
 // setupGitEnv sets up the environment for the given command. This is used to
 // pass configuration data to git and ssh and enables advanced cloning methods.
-func setupGitEnv(cmd *exec.Cmd, sshKeyFile string) {
+func setupGitEnv(cmd *exec.Cmd, sshKeyFile string, insecure bool) {
+	env := os.Environ()
+
+	if insecure {
+		env = append(env, "GIT_SSL_NO_VERIFY=true")
+	}
+
 	// If there's no sshKeyFile argument to deal with, we can skip this
 	// entirely.
 	if sshKeyFile == "" {
+		cmd.Env = env
 		return
 	}
 	const gitSSHCommand = "GIT_SSH_COMMAND="
@@ -313,7 +320,6 @@ func setupGitEnv(cmd *exec.Cmd, sshKeyFile string) {
 	// If we have an existing GIT_SSH_COMMAND, we need to append our options.
 	// We will also remove our old entry to make sure the behavior is the same
 	// with versions of Go < 1.9.
-	env := os.Environ()
 	for i, v := range env {
 		if strings.HasPrefix(v, gitSSHCommand) && len(v) > len(gitSSHCommand) {
 			sshCmd = []string{v}

@@ -664,7 +664,7 @@ func TestGitGetter_setupGitEnv_sshKey(t *testing.T) {
 	}
 
 	cmd := exec.Command("/bin/sh", "-c", "echo $GIT_SSH_COMMAND")
-	setupGitEnv(cmd, "/tmp/foo.pem")
+	setupGitEnv(cmd, "/tmp/foo.pem", false)
 	out, err := cmd.Output()
 	if err != nil {
 		t.Fatal(err)
@@ -687,7 +687,7 @@ func TestGitGetter_setupGitEnvWithExisting_sshKey(t *testing.T) {
 	defer os.Setenv("GIT_SSH_COMMAND", "")
 
 	cmd := exec.Command("/bin/sh", "-c", "echo $GIT_SSH_COMMAND")
-	setupGitEnv(cmd, "/tmp/foo.pem")
+	setupGitEnv(cmd, "/tmp/foo.pem", false)
 	out, err := cmd.Output()
 	if err != nil {
 		t.Fatal(err)
@@ -710,7 +710,7 @@ func TestGitGetter_setupGitEnvWithNoKeyFile(t *testing.T) {
 	defer os.Setenv("GIT_SSH_COMMAND", "")
 
 	cmd := exec.Command("/bin/sh", "-c", "echo $GIT_SSH_COMMAND")
-	setupGitEnv(cmd, "")
+	setupGitEnv(cmd, "", false)
 	out, err := cmd.Output()
 	if err != nil {
 		t.Fatal(err)
